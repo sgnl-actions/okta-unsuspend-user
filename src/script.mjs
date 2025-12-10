@@ -34,8 +34,8 @@ async function unsuspendUser(userId, baseUrl, authHeader) {
 export default {
   /**
    * Main execution handler - unsuspends the specified Okta user
-   * @param {Object} resolvedParams - Job input parameters
-   * @param {string} resolvedParams.userId - The Okta user ID
+   * @param {Object} params - Job input parameters
+   * @param {string} params.userId - The Okta user ID
    *
    * @param {Object} context - Execution context with secrets and environment
    * @param {string} context.environment.ADDRESS - Okta API base URL
