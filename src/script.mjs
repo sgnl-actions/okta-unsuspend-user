@@ -5,7 +5,7 @@
  * The user transitions from SUSPENDED status back to ACTIVE status.
  */
 
-import { getBaseUrl, getAuthorizationHeader } from '@sgnl-actions/utils';
+import { getBaseURL, getAuthorizationHeader, resolveJSONPathTemplates} from '@sgnl-actions/utils';
 
 /**
  * Helper function to perform user unsuspension
@@ -34,8 +34,8 @@ async function unsuspendUser(userId, baseUrl, authHeader) {
 export default {
   /**
    * Main execution handler - unsuspends the specified Okta user
-   * @param {Object} params - Job input parameters
-   * @param {string} params.userId - The Okta user ID
+   * @param {Object} resolvedParams - Job input parameters
+   * @param {string} resolvedParams.userId - The Okta user ID
    *
    * @param {Object} context - Execution context with secrets and environment
    * @param {string} context.environment.ADDRESS - Okta API base URL
@@ -58,7 +58,15 @@ export default {
    * @returns {Object} Job results
    */
   invoke: async (params, context) => {
-    const { userId } = params;
+    const jobContext = context.data || {};
+
+    // Resolve JSONPath templates in params
+    const { result: resolvedParams, errors } = resolveJSONPathTemplates(params, jobContext);
+    if (errors.length > 0) {
+      throw new Error(`Failed to resolve template values: ${errors.join(', ')}`);
+    }
+
+    const { userId } = resolvedParams;
 
     console.log(`Starting Okta user unsuspension for user: ${userId}`);
 
@@ -68,7 +76,7 @@ export default {
     }
 
     // Get base URL using utility function
-    const baseUrl = getBaseUrl(params, context);
+    const baseUrl = getBaseURL(resolvedParams, context);
 
     // Get authorization header
     let authHeader = await getAuthorizationHeader(context);
