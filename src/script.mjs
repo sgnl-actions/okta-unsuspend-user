@@ -7,6 +7,21 @@
 
 import { getBaseURL, createAuthHeaders} from '@sgnl-actions/utils';
 
+// Okta user status constants
+const USER_STATUS = {
+  SUSPENDED: 'SUSPENDED'
+};
+
+/**
+ * Helper function to create an error with status code
+ * @private
+ */
+function createError(message, statusCode) {
+  const error = new Error(message);
+  error.statusCode = statusCode;
+  return error;
+}
+
 /**
  * Helper function to perform user unsuspension
  * @private
@@ -21,6 +36,25 @@ async function unsuspendUser(userId, baseUrl, headers) {
   const response = await fetch(url, {
     method: 'POST',
     headers
+  });
+
+  return response;
+}
+
+/**
+ * Helper function to get user details
+ * @private
+ */
+async function getUser(userId, baseUrl, headers) {
+  // Safely encode userId to prevent injection
+  const encodedUserId = encodeURIComponent(userId);
+
+  // Build URL using base URL (already cleaned by getBaseUrl)
+  const url = `${baseUrl}/api/v1/users/${encodedUserId}`;
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: headers
   });
 
   return response;
@@ -72,53 +106,60 @@ export default {
     }
 
     // Make the API request to unsuspend the user
-    const response = await unsuspendUser(
-      userId,
-      baseUrl,
-      headers
-    );
+    const unsuspendUserResponse = await unsuspendUser(userId, baseUrl, headers);
+    console.log(`Receieved a ${unsuspendUserResponse.status} from Okta when unsuspending user ${userId}`)
 
-    // Handle the response
-    if (response.ok) {
-      // 200 OK is the expected success response
-      console.log(`Successfully unsuspended user ${userId}`);
+    if (!unsuspendUserResponse.ok && unsuspendUserResponse.status !== 400) {
+       // Handle error responses
+      let errorMessage = `Failed to unsuspend user: HTTP ${unsuspendUserResponse.status}`;
 
-      // Parse the response to get user details
-      let userData = {};
       try {
-        userData = await response.json();
+        const errorBody = await unsuspendUserResponse.json();
+        if (errorBody.errorSummary) {
+          errorMessage = `Failed to unsuspend user: ${errorBody.errorSummary}`;
+        }
+        console.error('Okta API error response:', errorBody);
       } catch {
-        // Response might not have JSON body
+        // Response might not be JSON
+        console.error('Failed to parse error response');
       }
 
-      return {
-        userId: userId,
-        unsuspended: true,
-        address: baseUrl,
-        unsuspendedAt: new Date().toISOString(),
-        status: userData.status || 'ACTIVE'
-      };
+      throw createError(errorMessage, unsuspendUserResponse.status);
     }
 
-    // Handle error responses
-    const statusCode = response.status;
-    let errorMessage = `Failed to unsuspend user: HTTP ${statusCode}`;
+    // Get user to confirm status change
+    const getUserResponse = await getUser(userId, baseUrl, headers)
+    if (!getUserResponse.ok) {
+      const errorMessage = `Cannot fetch information about User: HTTP ${getUserResponse.status}`;
+      console.error(errorMessage);
+      throw createError(errorMessage, getUserResponse.status);
+    }
 
+    let userData;
     try {
-      const errorBody = await response.json();
-      if (errorBody.errorSummary) {
-        errorMessage = `Failed to unsuspend user: ${errorBody.errorSummary}`;
-      }
-      console.error('Okta API error response:', errorBody);
-    } catch {
-      // Response might not be JSON
-      console.error('Failed to parse error response');
+      userData = await getUserResponse.json();
+    } catch (err) {
+      const errorMessage = `Cannot parse user data: ${err.message}`;
+      console.error(errorMessage);
+      throw createError(errorMessage, 500);
     }
 
-    // Throw error with status code for proper error handling
-    const error = new Error(errorMessage);
-    error.statusCode = statusCode;
-    throw error;
+    // Check if user now active
+    if (userData.status === USER_STATUS.SUSPENDED) {
+      const errorMessage = `User ${userId} could not be unsuspended. User is currently ${userData.status}`
+      console.error(errorMessage);
+      throw createError(errorMessage, 400);
+    }
+
+    // Successfully suspended user
+    console.log(`Fetched user info. User ${userId} is unsuspended with a status of ${userData.status}.`);
+    return {
+      userId,
+      unsuspended: true,
+      address: baseUrl,
+      unsuspendedAt: userData.statusChanged || userData.lastUpdated,
+      status: userData.status
+    };
   },
 
   /**
