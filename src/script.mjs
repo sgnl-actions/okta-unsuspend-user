@@ -5,7 +5,7 @@
  * The user transitions from SUSPENDED status back to ACTIVE status.
  */
 
-import { getBaseURL, getAuthorizationHeader} from '@sgnl-actions/utils';
+import { getBaseURL, getAuthorizationHeader } from '@sgnl-actions/utils';
 
 /**
  * Helper function to perform user unsuspension
