@@ -1,5 +1,6 @@
 import { jest } from '@jest/globals';
 import script from '../src/script.mjs';
+import { SGNL_USER_AGENT } from '@sgnl-actions/utils';
 
 // Mock fetch globally
 global.fetch = jest.fn();
@@ -63,7 +64,7 @@ describe('Okta Unsuspend User Action', () => {
             'Authorization': 'SSWS test-token-123',
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            "User-Agent": "SGNL-CAEP-Hub/2.0",
+            "User-Agent": SGNL_USER_AGENT,
           }
         }
       );
@@ -94,7 +95,7 @@ describe('Okta Unsuspend User Action', () => {
         expect.objectContaining({
           headers: expect.objectContaining({
             'Authorization': 'SSWS token-without-prefix',
-            'User-Agent': 'SGNL-CAEP-Hub/2.0'
+            'User-Agent': SGNL_USER_AGENT
           })
         })
       );
