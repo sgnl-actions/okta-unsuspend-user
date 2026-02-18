@@ -73,7 +73,7 @@ describe('Okta Unsuspend User Action', () => {
             'Authorization': 'SSWS test-token-123',
             'Accept': 'application/json',
             'Content-Type': 'application/json',
-            "User-Agent": SGNL_USER_AGENT,
+            'User-Agent': SGNL_USER_AGENT
           }
         }
       );
@@ -797,7 +797,7 @@ describe('Okta Unsuspend User Action', () => {
         status: 500,
         json: async () => ({
           errorCode: 'E0000009',
-          errorId: 'oaeXYZ123',
+          errorId: 'oaeXYZ123'
           // No errorSummary field
         })
       });

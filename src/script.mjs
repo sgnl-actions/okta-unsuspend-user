@@ -5,7 +5,7 @@
  * The user transitions from SUSPENDED status back to ACTIVE status.
  */
 
-import { getBaseURL, createAuthHeaders} from '@sgnl-actions/utils';
+import { getBaseURL, createAuthHeaders } from '@sgnl-actions/utils';
 
 // Okta user status constants
 const USER_STATUS = {
@@ -107,10 +107,10 @@ export default {
 
     // Make the API request to unsuspend the user
     const unsuspendUserResponse = await unsuspendUser(userId, baseUrl, headers);
-    console.log(`Receieved a ${unsuspendUserResponse.status} from Okta when unsuspending user ${userId}`)
+    console.log(`Receieved a ${unsuspendUserResponse.status} from Okta when unsuspending user ${userId}`);
 
     if (!unsuspendUserResponse.ok && unsuspendUserResponse.status !== 400) {
-       // Handle error responses
+      // Handle error responses
       let errorMessage = `Failed to unsuspend user: HTTP ${unsuspendUserResponse.status}`;
 
       try {
@@ -128,7 +128,7 @@ export default {
     }
 
     // Get user to confirm status change
-    const getUserResponse = await getUser(userId, baseUrl, headers)
+    const getUserResponse = await getUser(userId, baseUrl, headers);
     if (!getUserResponse.ok) {
       const errorMessage = `Cannot fetch information about User: HTTP ${getUserResponse.status}`;
       console.error(errorMessage);
@@ -146,7 +146,7 @@ export default {
 
     // Check if user now active
     if (userData.status === USER_STATUS.SUSPENDED) {
-      const errorMessage = `User ${userId} could not be unsuspended. User is currently ${userData.status}`
+      const errorMessage = `User ${userId} could not be unsuspended. User is currently ${userData.status}`;
       console.error(errorMessage);
       throw createError(errorMessage, 400);
     }
